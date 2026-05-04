@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0c6f61">
+    <title>SteuerCockpit</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="app-shell">
+      <div>
+        <p class="eyebrow">Privates Steuerzentrum</p>
+        <h1>SteuerCockpit</h1>
+      </div>
+      <div class="header-actions">
+        <button class="ghost" id="printButton" type="button" title="Druckansicht">Drucken</button>
+        <button class="primary" id="exportBackupButton" type="button">Backup</button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="notice" aria-label="Hinweis">
+        <strong>Hinweis:</strong> Dieses Tool organisiert deine Daten und zeigt Pruefideen. Es ersetzt keine Steuerberatung und uebermittelt nichts an ELSTER.
+      </section>
+
+      <nav class="tabs" aria-label="Hauptbereiche">
+        <button class="tab active" data-tab="dashboard" type="button">Uebersicht</button>
+        <button class="tab" data-tab="transactions" type="button">Einnahmen & Ausgaben</button>
+        <button class="tab" data-tab="trips" type="button">Fahrtenbuch</button>
+        <button class="tab" data-tab="vat" type="button">UStVA</button>
+        <button class="tab" data-tab="provisions" type="button">Ruecklagen</button>
+        <button class="tab" data-tab="euer" type="button">EUR-Vorbereitung</button>
+        <button class="tab" data-tab="tips" type="button">Steuer-Tipps</button>
+        <button class="tab" data-tab="settings" type="button">Daten</button>
+      </nav>
+
+      <section class="panel active" id="dashboard">
+        <div class="toolbar">
+          <label>
+            Steuerjahr
+            <select id="yearSelect"></select>
+          </label>
+          <label>
+            Monat
+            <select id="monthSelect">
+              <option value="all">Ganzes Jahr</option>
+            </select>
+          </label>
+          <label>
+            Taetigkeit
+            <select id="activityFilter"></select>
+          </label>
+        </div>
+
+        <div class="metric-grid" id="metricGrid"></div>
+
+        <div class="split">
+          <section>
+            <div class="section-title">
+              <h2>Monatsverlauf</h2>
+              <span id="monthSummary"></span>
+            </div>
+            <div class="chart" id="monthChart" aria-label="Monatsverlauf"></div>
+          </section>
+
+          <section>
+            <div class="section-title">
+              <h2>Naechste Aufgaben</h2>
+              <span id="taskCount"></span>
+            </div>
+            <ul class="task-list" id="taskList"></ul>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel" id="transactions">
+        <div class="section-title">
+          <h2>Ausgabentracker und Einnahmen</h2>
+          <div class="button-row">
+            <button class="ghost" id="exportTransactionsButton" type="button">CSV exportieren</button>
+            <button class="ghost" id="clearTransactionForm" type="button">Formular leeren</button>
+          </div>
+        </div>
+
+        <form class="form-grid" id="transactionForm">
+          <input type="hidden" id="transactionId">
+          <label>
+            Typ
+            <select id="transactionType" required>
+              <option value="income">Einnahme</option>
+              <option value="expense">Ausgabe</option>
+            </select>
+          </label>
+          <label>
+            Datum
+            <input id="transactionDate" type="date" required>
+          </label>
+          <label>
+            Betrag brutto
+            <input id="transactionAmount" type="number" min="0" step="0.01" required placeholder="0,00">
+          </label>
+          <label>
+            USt.
+            <select id="transactionVat">
+              <option value="0">0%</option>
+              <option value="7">7%</option>
+              <option value="19">19%</option>
+            </select>
+          </label>
+          <label>
+            Kategorie
+            <select id="transactionCategory"></select>
+          </label>
+          <label>
+            Taetigkeit
+            <select id="transactionActivity"></select>
+          </label>
+          <label>
+            Kontakt / Haendler
+            <input id="transactionPartner" type="text" placeholder="Name">
+          </label>
+          <label class="wide">
+            Beschreibung
+            <input id="transactionDescription" type="text" placeholder="Wofuer war der Betrag?">
+          </label>
+          <label>
+            Zahlung
+            <select id="transactionPayment">
+              <option>Bank</option>
+              <option>Kreditkarte</option>
+              <option>PayPal</option>
+              <option>Bar</option>
+              <option>Sonstiges</option>
+            </select>
+          </label>
+          <label>
+            Belegstatus
+            <select id="transactionReceipt">
+              <option value="available">Beleg vorhanden</option>
+              <option value="missing">Beleg fehlt</option>
+              <option value="digital">Digital abgelegt</option>
+            </select>
+          </label>
+          <label>
+            Abzugsanteil %
+            <input id="transactionDeductible" type="number" min="0" max="100" step="1" value="100">
+          </label>
+          <button class="primary wide" type="submit">Buchung speichern</button>
+        </form>
+
+        <div class="toolbar">
+          <label>
+            Suche
+            <input id="transactionSearch" type="search" placeholder="Kategorie, Text, Kontakt">
+          </label>
+          <label>
+            Filter
+            <select id="transactionFilter">
+              <option value="all">Alle</option>
+              <option value="income">Nur Einnahmen</option>
+              <option value="expense">Nur Ausgaben</option>
+              <option value="missing">Fehlende Belege</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Typ</th>
+                <th>Kategorie</th>
+                <th>Taetigkeit</th>
+                <th>Beschreibung</th>
+                <th class="number">Brutto</th>
+                <th class="number">USt/VSt</th>
+                <th class="number">Abziehbar</th>
+                <th>Beleg</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="transactionTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" id="trips">
+        <div class="section-title">
+          <h2>Fahrtenbuch</h2>
+          <div class="button-row">
+            <button class="ghost" id="exportTripsButton" type="button">CSV exportieren</button>
+            <button class="ghost" id="clearTripForm" type="button">Formular leeren</button>
+          </div>
+        </div>
+
+        <form class="form-grid" id="tripForm">
+          <input type="hidden" id="tripId">
+          <label>
+            Datum
+            <input id="tripDate" type="date" required>
+          </label>
+          <label>
+            Start
+            <input id="tripStartTime" type="time">
+          </label>
+          <label>
+            Ende
+            <input id="tripEndTime" type="time">
+          </label>
+          <label>
+            Art
+            <select id="tripType">
+              <option value="business">Betrieblich</option>
+              <option value="commute">Wohnung / erste Taetigkeitsstaette</option>
+              <option value="private">Privat</option>
+            </select>
+          </label>
+          <label>
+            Taetigkeit
+            <select id="tripActivity"></select>
+          </label>
+          <label>
+            Start-km
+            <input id="tripKmStart" type="number" min="0" step="1" required>
+          </label>
+          <label>
+            End-km
+            <input id="tripKmEnd" type="number" min="0" step="1" required>
+          </label>
+          <label>
+            Von
+            <input id="tripFrom" type="text" required placeholder="Ort / Adresse">
+          </label>
+          <label>
+            Nach
+            <input id="tripTo" type="text" required placeholder="Ort / Adresse">
+          </label>
+          <label class="wide">
+            Zweck / Kunde
+            <input id="tripPurpose" type="text" required placeholder="Konkreter Anlass, Kunde oder Projekt">
+          </label>
+          <label class="wide">
+            Notiz
+            <input id="tripNotes" type="text" placeholder="Optional">
+          </label>
+          <button class="primary wide" type="submit">Fahrt speichern</button>
+        </form>
+
+        <div class="split">
+          <section>
+            <div class="section-title">
+              <h2>Fahrten-Auswertung</h2>
+              <span id="tripSummary"></span>
+            </div>
+            <div class="meter-list" id="tripMeters"></div>
+          </section>
+          <section>
+            <div class="section-title">
+              <h2>Plausibilitaetscheck</h2>
+              <span id="tripIssueCount"></span>
+            </div>
+            <ul class="task-list" id="tripIssues"></ul>
+          </section>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Art</th>
+                <th>Taetigkeit</th>
+                <th>Route</th>
+                <th>Zweck</th>
+                <th class="number">km</th>
+                <th class="number">End-km</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tripTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" id="vat">
+        <div class="section-title">
+          <h2>UStVA-Vorbereitung</h2>
+          <div class="button-row">
+            <button class="ghost" id="copyVatButton" type="button">USt-Zusammenfassung kopieren</button>
+            <button class="ghost" id="exportVatButton" type="button">CSV exportieren</button>
+          </div>
+        </div>
+        <div class="metric-grid" id="vatMetricGrid"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Quartal</th>
+                <th class="number">Netto-Umsaetze 19%</th>
+                <th class="number">Netto-Umsaetze 7%</th>
+                <th class="number">Umsatzsteuer</th>
+                <th class="number">Vorsteuer</th>
+                <th class="number">Vorauss. Zahllast</th>
+              </tr>
+            </thead>
+            <tbody id="vatTable"></tbody>
+          </table>
+        </div>
+        <section>
+          <h3>UStVA-Checkliste</h3>
+          <ul class="check-list" id="vatChecklist"></ul>
+        </section>
+      </section>
+
+      <section class="panel" id="provisions">
+        <div class="section-title">
+          <h2>Ruecklagen & erwartete Zahlungen</h2>
+          <button class="ghost" id="clearProvisionForm" type="button">Formular leeren</button>
+        </div>
+
+        <form class="form-grid" id="provisionForm">
+          <input type="hidden" id="provisionId">
+          <label>
+            Art
+            <select id="provisionType">
+              <option value="vat">Umsatzsteuer</option>
+              <option value="incomeTax">Einkommensteuer</option>
+              <option value="tradeTax">Gewerbesteuer</option>
+              <option value="social">Versicherung / Vorsorge</option>
+              <option value="other">Sonstiges</option>
+            </select>
+          </label>
+          <label>
+            Taetigkeit
+            <select id="provisionActivity"></select>
+          </label>
+          <label>
+            Faellig am
+            <input id="provisionDueDate" type="date" required>
+          </label>
+          <label>
+            Betrag
+            <input id="provisionAmount" type="number" min="0" step="0.01" required placeholder="0,00">
+          </label>
+          <label class="wide">
+            Beschreibung
+            <input id="provisionDescription" type="text" placeholder="z. B. USt Q1, ESt-Vorauszahlung">
+          </label>
+          <label>
+            Status
+            <select id="provisionStatus">
+              <option value="planned">Geplant</option>
+              <option value="reserved">Zurueckgelegt</option>
+              <option value="paid">Bezahlt</option>
+            </select>
+          </label>
+          <button class="primary wide" type="submit">Ruecklage speichern</button>
+        </form>
+
+        <div class="metric-grid" id="provisionMetricGrid"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Faellig</th>
+                <th>Art</th>
+                <th>Taetigkeit</th>
+                <th>Beschreibung</th>
+                <th>Status</th>
+                <th class="number">Betrag</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="provisionTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" id="euer">
+        <div class="section-title">
+          <h2>EUR-Vorbereitung</h2>
+          <button class="ghost" id="copyEuerButton" type="button">Zusammenfassung kopieren</button>
+        </div>
+        <div class="split">
+          <section>
+            <h3>Betriebseinnahmen</h3>
+            <div id="incomeGroups" class="group-list"></div>
+          </section>
+          <section>
+            <h3>Betriebsausgaben</h3>
+            <div id="expenseGroups" class="group-list"></div>
+          </section>
+        </div>
+        <section>
+          <h3>ELSTER-Checkliste</h3>
+          <ul class="check-list" id="elsterChecklist"></ul>
+        </section>
+      </section>
+
+      <section class="panel" id="tips">
+        <div class="section-title">
+          <h2>Pruefideen fuer weniger Steuern</h2>
+          <span>Keine Beratung, aber gute Erinnerungen</span>
+        </div>
+        <section class="hint-board">
+          <div class="section-title">
+            <h3>Automatische Steuerhinweise</h3>
+            <span id="taxHintCount"></span>
+          </div>
+          <div class="hint-list" id="taxHintList"></div>
+        </section>
+        <div class="tips-grid" id="tipsGrid"></div>
+      </section>
+
+      <section class="panel" id="settings">
+        <div class="section-title">
+          <h2>Daten & Profil</h2>
+          <span>Alles bleibt lokal in deinem Browser</span>
+        </div>
+        <form class="form-grid" id="profileForm">
+          <label>
+            Name
+            <input id="profileName" type="text" placeholder="Dein Name">
+          </label>
+          <label>
+            Taetigkeit
+            <input id="profileBusiness" type="text" placeholder="z. B. Freelancer, Gewerbe">
+          </label>
+          <label>
+            Standard-km-Satz
+            <input id="profileKmRate" type="number" min="0" step="0.01">
+          </label>
+          <label>
+            Kleinunternehmer
+            <select id="profileSmallBusiness">
+              <option value="yes">Ja / USt. nur informativ</option>
+              <option value="no">Nein / USt. ausweisen</option>
+            </select>
+          </label>
+          <label>
+            Taetigkeit 1
+            <input id="profileActivityOne" type="text" placeholder="z. B. Gewerbe">
+          </label>
+          <label>
+            Art 1
+            <select id="profileActivityOneType">
+              <option value="trade">Gewerblich</option>
+              <option value="freelance">Freiberuflich</option>
+            </select>
+          </label>
+          <label>
+            Taetigkeit 2
+            <input id="profileActivityTwo" type="text" placeholder="z. B. Freiberuflich">
+          </label>
+          <label>
+            Art 2
+            <select id="profileActivityTwoType">
+              <option value="freelance">Freiberuflich</option>
+              <option value="trade">Gewerblich</option>
+            </select>
+          </label>
+          <button class="primary wide" type="submit">Profil speichern</button>
+        </form>
+
+        <div class="data-tools">
+          <label class="file-input">
+            Backup importieren
+            <input id="importBackupInput" type="file" accept="application/json">
+          </label>
+          <button class="danger" id="resetDataButton" type="button">Auf Demodaten zuruecksetzen</button>
+        </div>
+
+        <section>
+          <h3>Quellenstand</h3>
+          <p class="muted">Die Hinweise in der App orientieren sich an ELSTER/BMF-Informationen, zuletzt beim Erstellen dieses Prototyps am 04.05.2026 geprueft.</p>
+          <ul class="source-list">
+            <li><a href="https://www.elster.de/eportal/formulare-leistungen/alleformulare/euer" target="_blank" rel="noreferrer">ELSTER: Einnahmenueberschussrechnung</a></li>
+            <li><a href="https://www.elster.de/eportal/formulare-leistungen/alleformulare/ustvaeru" target="_blank" rel="noreferrer">ELSTER: Umsatzsteuer-Voranmeldung</a></li>
+            <li><a href="https://www.elster.de/eportal/helpGlobal?themaGlobal=help_ustva_2026" target="_blank" rel="noreferrer">ELSTER-Hilfe: UStVA 2026</a></li>
+            <li><a href="https://www.elster.de/eportal/helpGlobal?themaGlobal=help_euer_ufa_77_2023" target="_blank" rel="noreferrer">ELSTER-Hilfe: Anlage EUR</a></li>
+            <li><a href="https://www.elster.de/eportal/helpGlobal?themaGlobal=help_meine_belege" target="_blank" rel="noreferrer">ELSTER: Meine Belege</a></li>
+            <li><a href="https://esth.bundesfinanzministerium.de/lsth/2024/A-Einkommensteuergesetz/II-Einkommen/4-Ueberschuss-der-Einnahmen-ueber-die-Werbungskosten/Paragraf-8-Druck/paragraf-8.html" target="_blank" rel="noreferrer">BMF/LStH: Ordnungsgemaesses Fahrtenbuch</a></li>
+            <li><a href="https://ao.bundesfinanzministerium.de/lsth/2026/tabellarische-Uebersicht/Reisekosten-bei-Ausw%C3%A4rtst%C3%A4tigkeiten.html" target="_blank" rel="noreferrer">BMF/LStH 2026: Reisekosten-Uebersicht</a></li>
+          </ul>
+        </section>
+      </section>
+    </main>
+
+    <template id="emptyStateTemplate">
+      <tr>
+        <td colspan="8" class="empty">Noch keine Daten erfasst.</td>
+      </tr>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
