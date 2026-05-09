@@ -141,7 +141,7 @@ button:hover,
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -547,6 +547,121 @@ tr:last-child td {
 .source-list li {
   color: var(--muted);
 }
+
+/* ---- Cashflow & Vertraege styles ---- */
+
+.day-analysis {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fcfdfc;
+  margin-bottom: 18px;
+}
+
+.day-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  margin-bottom: 8px;
+}
+
+.day-item.income {
+  border-left: 4px solid var(--brand);
+}
+
+.day-item.expense {
+  border-left: 4px solid var(--red);
+}
+
+.day-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.day-item-day {
+  background: var(--surface-soft);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--muted);
+  min-width: 52px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.day-item-amount {
+  font-size: 1.05rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.positive-text { color: var(--brand); }
+.negative-text { color: var(--red); }
+
+.balance-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.balance-badge.positive {
+  background: rgba(12, 111, 97, 0.12);
+  color: var(--brand-strong);
+}
+
+.balance-badge.negative {
+  background: rgba(176, 58, 58, 0.1);
+  color: var(--red);
+}
+
+.forecast-wrap {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fcfdfc;
+  overflow-x: auto;
+}
+
+.badge-active {
+  background: rgba(12, 111, 97, 0.12);
+  color: var(--brand-strong);
+}
+
+.badge-inactive {
+  background: rgba(176, 58, 58, 0.1);
+  color: var(--red);
+}
+
+.cf-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  gap: 10px;
+}
+
+.cf-row:last-child {
+  border-bottom: 0;
+}
+
+.cf-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ---- End Cashflow styles ---- */
 
 @media (max-width: 900px) {
   header.app-shell,
