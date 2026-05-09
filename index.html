@@ -7,6 +7,7 @@
     <title>SteuerCockpit</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   </head>
   <body>
     <header class="app-shell">
@@ -27,6 +28,8 @@
 
       <nav class="tabs" aria-label="Hauptbereiche">
         <button class="tab active" data-tab="dashboard" type="button">Uebersicht</button>
+        <button class="tab" data-tab="cashflow" type="button">Cashflow</button>
+        <button class="tab" data-tab="vertraege" type="button">Vertraege</button>
         <button class="tab" data-tab="transactions" type="button">Einnahmen & Ausgaben</button>
         <button class="tab" data-tab="trips" type="button">Fahrtenbuch</button>
         <button class="tab" data-tab="vat" type="button">UStVA</button>
@@ -488,6 +491,183 @@
         </section>
       </section>
     </main>
+
+      <!-- ============================================================ -->
+      <!-- CASHFLOW PANEL                                              -->
+      <!-- ============================================================ -->
+      <section class="panel" id="cashflow">
+        <div class="section-title">
+          <h2>Cashflow-Cockpit</h2>
+          <span class="muted">Monatliche Uebersicht, Tag-Analyse und Prognose</span>
+        </div>
+
+        <div class="toolbar">
+          <label>
+            Analyse ab Tag
+            <input id="analysisDay" type="number" min="1" max="31" value="21" style="width:80px">
+          </label>
+          <span class="muted" style="align-self:center;font-size:0.9rem">
+            Zeigt alle Posten, die ab diesem Tag noch im Monat faellig sind.
+          </span>
+        </div>
+
+        <div class="metric-grid" id="cashflowMetrics"></div>
+
+        <div class="day-analysis">
+          <div class="section-title">
+            <h3>Ausstehend ab Tag <span id="dayAnalysisLabel">21</span> bis Monatsende</h3>
+            <span id="dayAnalysisBalance" class="balance-badge"></span>
+          </div>
+          <div id="dayAnalysisItems"></div>
+        </div>
+
+        <section style="margin-top:18px">
+          <div class="section-title">
+            <h2>6-Monats-Prognose</h2>
+            <span class="muted">Fixkosten + Ø variable Ausgaben (letzte 3 Monate)</span>
+          </div>
+          <div class="forecast-wrap" id="forecastChart"></div>
+        </section>
+
+        <div class="split" style="margin-top:18px">
+          <section>
+            <div class="section-title">
+              <h3>Regelmaessige Einnahmen</h3>
+            </div>
+            <div id="cfIncomeList"></div>
+          </section>
+          <section>
+            <div class="section-title">
+              <h3>Aktive Verbindlichkeiten</h3>
+            </div>
+            <div id="cfLiabilityList"></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- VERTRAEGE PANEL                                              -->
+      <!-- ============================================================ -->
+      <section class="panel" id="vertraege">
+        <div class="section-title">
+          <h2>Vertraege &amp; Verbindlichkeiten</h2>
+          <div class="button-row">
+            <button class="ghost" id="downloadTemplateBtn" type="button">Vorlage (CSV)</button>
+            <label class="file-input">
+              Excel / CSV importieren
+              <input id="excelImportInput" type="file" accept=".xlsx,.xls,.csv">
+            </label>
+            <button class="ghost" id="clearLiabilityFormBtn" type="button">Formular leeren</button>
+          </div>
+        </div>
+
+        <form class="form-grid" id="liabilityForm">
+          <input type="hidden" id="liabilityId">
+          <label>
+            Name
+            <input id="liabilityName" type="text" required placeholder="z. B. Tesla Leasing">
+          </label>
+          <label>
+            Kategorie
+            <select id="liabilityCategory">
+              <option value="leasing">Leasing</option>
+              <option value="kredit">Kredit / Darlehen</option>
+              <option value="abo">Abonnement</option>
+              <option value="versicherung">Versicherung</option>
+              <option value="miete">Miete / Pacht</option>
+              <option value="sonstiges">Sonstiges</option>
+            </select>
+          </label>
+          <label>
+            Betrag / Monat (EUR)
+            <input id="liabilityAmount" type="number" min="0" step="0.01" required placeholder="0,00">
+          </label>
+          <label>
+            Startdatum
+            <input id="liabilityStart" type="date" required>
+          </label>
+          <label>
+            Laufzeit (Monate)
+            <input id="liabilityDuration" type="number" min="1" step="1" required placeholder="36">
+          </label>
+          <label>
+            Restwert (EUR)
+            <input id="liabilityResidual" type="number" min="0" step="0.01" value="0" placeholder="0,00">
+          </label>
+          <label>
+            Faellig am (Tag)
+            <input id="liabilityDueDay" type="number" min="1" max="31" step="1" value="1">
+          </label>
+          <label class="wide">
+            Notizen
+            <input id="liabilityNotes" type="text" placeholder="Optional">
+          </label>
+          <button class="primary wide" type="submit">Vertrag speichern</button>
+        </form>
+
+        <div class="metric-grid" id="liabilityMetrics"></div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Kategorie</th>
+                <th class="number">EUR / Monat</th>
+                <th>Restlaufzeit</th>
+                <th>Vertragsende</th>
+                <th class="number">Restwert</th>
+                <th>Faellig</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="liabilityTable"></tbody>
+          </table>
+        </div>
+
+        <!-- Regelmaessige Einnahmen -->
+        <div class="section-title" style="margin-top:32px">
+          <h2>Regelmaessige Einnahmen</h2>
+          <button class="ghost" id="clearIncomeFormBtn" type="button">Formular leeren</button>
+        </div>
+
+        <form class="form-grid" id="recurringIncomeForm">
+          <input type="hidden" id="recurringIncomeId">
+          <label>
+            Bezeichnung
+            <input id="incomeName" type="text" required placeholder="z. B. Gehalt">
+          </label>
+          <label>
+            Betrag (EUR)
+            <input id="incomeAmount" type="number" min="0" step="0.01" required placeholder="0,00">
+          </label>
+          <label>
+            Faellig am (Tag)
+            <input id="incomeDueDay" type="number" min="1" max="31" step="1" value="1">
+          </label>
+          <label class="wide">
+            Notizen
+            <input id="incomeNotes" type="text" placeholder="Optional">
+          </label>
+          <button class="primary wide" type="submit">Einnahme speichern</button>
+        </form>
+
+        <div class="table-wrap" style="margin-top:12px">
+          <table>
+            <thead>
+              <tr>
+                <th>Bezeichnung</th>
+                <th class="number">Betrag</th>
+                <th>Faellig am</th>
+                <th>Notizen</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="recurringIncomeTable"></tbody>
+          </table>
+        </div>
+      </section>
 
     <template id="emptyStateTemplate">
       <tr>
